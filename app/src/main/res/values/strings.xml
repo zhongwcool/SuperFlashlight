@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Super FlashLight</string>
+    <string name="again_exit">Quit if you press again!</string>
+    <string name="content">Flashlight is on.</string>
+</resources>
