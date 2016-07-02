@@ -9,9 +9,9 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Process;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
@@ -43,13 +43,11 @@ public class MainActivity extends AppCompatActivity {
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
-        int width = size.x;
-        int height = size.y;
         bgLight = ((RelativeLayout) findViewById(R.id.btn_light));
         RelativeLayout.LayoutParams localLayoutParams1 = new RelativeLayout.LayoutParams(-2, -2);
         RelativeLayout.LayoutParams localLayoutParams2 = new RelativeLayout.LayoutParams(-2, -2);
-        localLayoutParams1.setMargins((int) (0.42F * width), (int) (0.68F * height), 0, 0);
-        localLayoutParams2.setMargins((int) (0.42F * width), (int) (0.46F * height), 0, 0);
+        localLayoutParams1.setMargins((int) (0.42F * size.x), (int) (0.68F * size.y), 0, 0);
+        localLayoutParams2.setMargins((int) (0.42F * size.x), (int) (0.46F * size.y), 0, 0);
         lightBtn = ((Button) findViewById(R.id.button1));
         mButton = new Mybutton(true);
         lightBtn.setOnClickListener(mButton);
@@ -71,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void openLight() {
+    private void openLight() {
         try {
             mCameraManager.setTorchMode("0", true);
         } catch (CameraAccessException e) {
@@ -79,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void closeLight() {
+    private void closeLight() {
         try {
             mCameraManager.setTorchMode("0", false);
         } catch (CameraAccessException e) {
@@ -87,10 +85,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    class Mybutton implements View.OnClickListener {
+    private class Mybutton implements View.OnClickListener {
         public boolean open;
 
-        public Mybutton(boolean bool) {
+        Mybutton(boolean bool) {
             open = bool;
             if (open) {
                 openIt();
@@ -99,13 +97,13 @@ public class MainActivity extends AppCompatActivity {
             closeIt();
         }
 
-        public void closeIt() {
+        void closeIt() {
             lightBtn.setBackgroundResource(R.drawable.turn_off);
             bgLight.setBackgroundResource(R.drawable.shou_off);
             closeLight();
         }
 
-        public void openIt() {
+        void openIt() {
             if (sosListener != null) {
                 sosListener.close();
             }
@@ -125,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    class OpenLightTask extends AsyncTask<Void, Void, Void> {
+    private class OpenLightTask extends AsyncTask<Void, Void, Void> {
         OpenLightTask() {
         }
 
@@ -147,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    class OpenLightTaskT extends AsyncTask<Void, Void, Void> {
+    private class OpenLightTaskT extends AsyncTask<Void, Void, Void> {
         OpenLightTaskT() {
         }
 
@@ -168,11 +166,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    class SosButton implements View.OnClickListener {
+    private class SosButton implements View.OnClickListener {
         public boolean open;
         private SosThread sosThread = null;
 
-        public SosButton(boolean bool) {
+        SosButton(boolean bool) {
             open = bool;
             if (open) {
                 openIt();
@@ -181,12 +179,12 @@ public class MainActivity extends AppCompatActivity {
             closeIt();
         }
 
-        public void close() {
+        void close() {
             closeIt();
             open = false;
         }
 
-        public void closeIt() {
+        void closeIt() {
             bgLight.setBackgroundResource(R.drawable.shou_off);
             sosBtn.setBackgroundResource(R.drawable.sos_off);
             if (sosThread != null) {
@@ -195,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public void openIt() {
+        void openIt() {
             bgLight.setBackgroundResource(R.drawable.shou_on);
             lightBtn.setBackgroundResource(R.drawable.turn_off);
             sosBtn.setBackgroundResource(R.drawable.sos_on);
@@ -214,21 +212,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    class SosThread extends Thread {
+    private class SosThread extends Thread {
         int i;
         int j;
         int k;
 
         private boolean stopFlag = false;
 
-        public SosThread() {
+        SosThread() {
         }
 
-        public void Stop() {
+        void Stop() {
             stopFlag = true;
         }
 
-        public void sleepExt(long t) {
+        void sleepExt(long t) {
             try {
                 Thread.sleep(t);
             } catch (Exception e) {
@@ -274,9 +272,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    protected void showNotification() {
+    private void showNotification() {
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        PendingIntent contentIndent = PendingIntent.getActivity(MainActivity.this, 0, new Intent(MainActivity.this,MainActivity.class),PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent contentIndent = PendingIntent.getActivity(MainActivity.this, 0, new Intent(MainActivity.this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
         Notification mNotification = new Notification.Builder(MainActivity.this)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(getString(R.string.content))
@@ -288,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
         mNotificationManager.notify(0, mNotification);
     }
 
-    public void fullScreen() {
+    private void fullScreen() {
         bgLight.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         int newUiOptions = getWindow().getDecorView().getSystemUiVisibility();
         //int newUiOptions = uiOptions;
@@ -307,7 +305,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void Myback() {
+    private void Myback() {
         closeLight();
         mNotificationManager.cancel(0);
         finish();
