@@ -37,17 +37,18 @@ public class MainActivity extends AppCompatActivity {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
+
         mCameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
-        bgLight = ((RelativeLayout) findViewById(R.id.btn_light));
         RelativeLayout.LayoutParams localLayoutParams1 = new RelativeLayout.LayoutParams(-2, -2);
         RelativeLayout.LayoutParams localLayoutParams2 = new RelativeLayout.LayoutParams(-2, -2);
         localLayoutParams1.setMargins((int) (0.42F * size.x), (int) (0.68F * size.y), 0, 0);
         localLayoutParams2.setMargins((int) (0.42F * size.x), (int) (0.46F * size.y), 0, 0);
+
+        bgLight = ((RelativeLayout) findViewById(R.id.btn_light));
         lightBtn = ((Button) findViewById(R.id.button1));
         mButton = new Mybutton(true);
         lightBtn.setOnClickListener(mButton);
@@ -71,7 +72,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void openLight() {
         try {
-            mCameraManager.setTorchMode("0", true);
+            //mCameraManager.setTorchMode("0", true);
+            String[] list = mCameraManager.getCameraIdList();
+            mCameraManager.setTorchMode(list[0], true);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -79,7 +82,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void closeLight() {
         try {
-            mCameraManager.setTorchMode("0", false);
+            //mCameraManager.setTorchMode("0", false);
+            String[] list = mCameraManager.getCameraIdList();
+            mCameraManager.setTorchMode(list[0], false);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
