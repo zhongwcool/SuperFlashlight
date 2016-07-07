@@ -5,13 +5,13 @@
     android:background="@drawable/shou_off">
 
     <RelativeLayout
-        android:id="@+id/btn_light"
+        android:id="@+id/torch"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/shou_on">
 
         <Button
-            android:id="@+id/button1"
+            android:id="@+id/btn_torch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
@@ -21,7 +21,7 @@
             android:minWidth="0dp" />
 
         <Button
-            android:id="@+id/button2"
+            android:id="@+id/btn_sos"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
