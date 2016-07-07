@@ -20,7 +20,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
-    private int back = 0;
+    private int mBackKeyPressedTimes = 0;
     private int SOS_SIGNAL = 3;
     private Long SOS_SIGNAL_SHORT = 300L;
     private Long SOS_SIGNAL_LONG = 900L;
@@ -43,22 +43,21 @@ public class MainActivity extends AppCompatActivity {
         Point size = new Point();
         display.getSize(size);
         RelativeLayout.LayoutParams mTorchLayoutParams = new RelativeLayout.LayoutParams(-2, -2);
-        RelativeLayout.LayoutParams mSoslocalLayoutParams = new RelativeLayout.LayoutParams(-2, -2);
+        RelativeLayout.LayoutParams mSosLayoutParams = new RelativeLayout.LayoutParams(-2, -2);
         mTorchLayoutParams.setMargins((int) (0.42F * size.x), (int) (0.46F * size.y), 0, 0);
-        mSoslocalLayoutParams.setMargins((int) (0.42F * size.x), (int) (0.68F * size.y), 0, 0);
+        mSosLayoutParams.setMargins((int) (0.42F * size.x), (int) (0.68F * size.y), 0, 0);
 
         mBgLight = ((RelativeLayout) findViewById(R.id.torch));
         mTorchBtn = ((Button) findViewById(R.id.btn_torch));
         mTorchBtn.setLayoutParams(mTorchLayoutParams);
         mSosBtn = ((Button) findViewById(R.id.btn_sos));
-        mSosBtn.setLayoutParams(mSoslocalLayoutParams);
+        mSosBtn.setLayoutParams(mSosLayoutParams);
         mTorchListener = new FlightListener(true, mTorchBtn);
         mSosListener = new FlightListener(false, mSosBtn);
         mTorchBtn.setOnClickListener(mTorchListener);
         mSosBtn.setOnClickListener(mSosListener);
         showNotification();
     }
-
 
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
@@ -105,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
     private class FlightListener implements View.OnClickListener {
         public boolean open;
-        private SosThread sosThread = null;
+        private SosThread mSosThread = null;
 
         FlightListener(boolean bool, View v) {
             open = bool;
@@ -123,15 +122,14 @@ public class MainActivity extends AppCompatActivity {
                     if (mSosListener != null) {
                         mSosListener.close(v);
                     }
-                    mBgLight.setBackgroundResource(R.drawable.shou_on);
                     mTorchBtn.setBackgroundResource(R.drawable.turn_on);
                     openTorch();
                     break;
                 case R.id.btn_sos:
                     mTorchBtn.setBackgroundResource(R.drawable.turn_off);
                     mSosBtn.setBackgroundResource(R.drawable.sos_on);
-                    sosThread = new SosThread();
-                    sosThread.start();
+                    mSosThread = new SosThread();
+                    mSosThread.start();
                     break;
             }
         }
@@ -141,14 +139,13 @@ public class MainActivity extends AppCompatActivity {
             switch (v.getId()) {
                 case R.id.btn_torch:
                     mTorchBtn.setBackgroundResource(R.drawable.turn_off);
-                    mBgLight.setBackgroundResource(R.drawable.shou_off);
                     closeTorch();
                     break;
                 case R.id.btn_sos:
                     mSosBtn.setBackgroundResource(R.drawable.sos_off);
-                    if (sosThread != null) {
-                        sosThread.stopThread();
-                        sosThread = null;
+                    if (mSosThread != null) {
+                        mSosThread.stopThread();
+                        mSosThread = null;
                     }
                     break;
             }
@@ -166,9 +163,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class SosThread extends Thread {
-        private int i;
-        private int j;
-        private int k;
+        private int i = 0;
+        private int j = 0;
+        private int k = 0;
         private boolean stopFlag = false;
 
         SosThread() {
@@ -192,9 +189,6 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             while (!stopFlag) {
-                i = 0;
-                j = 0;
-                k = 0;
                 while (!stopFlag && i < SOS_SIGNAL) {
                     openTorch();
                     sleepThread(SOS_SIGNAL_SHORT);
@@ -255,17 +249,27 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-            switch (back++) {
-                case 0:
-                    Toast.makeText(this, getString(R.string.again_exit), Toast.LENGTH_SHORT).show();
-                    break;
-                case 1:
-                    back = 0;
-                    closeTorch();
-                    mNotificationManager.cancel(0);
-                    finish();
-                    Process.killProcess(Process.myPid());
-                    break;
+            if (mBackKeyPressedTimes == 0) {
+                mBackKeyPressedTimes = 1;
+                Toast.makeText(this, getString(R.string.again_exit), Toast.LENGTH_SHORT).show();
+                new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(3000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } finally {
+                            mBackKeyPressedTimes = 0;
+                        }
+                    }
+                }.start();
+            } else {
+                mBackKeyPressedTimes = 0;
+                mNotificationManager.cancel(0);
+                closeTorch();
+                finish();
+                Process.killProcess(Process.myPid());
             }
             return true;
         }
