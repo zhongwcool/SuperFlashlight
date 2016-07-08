@@ -22,8 +22,8 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
     private int mBackKeyPressedTimes = 0;
     private int SOS_SIGNAL = 3;
-    private Long SOS_SIGNAL_SHORT = 300L;
-    private Long SOS_SIGNAL_LONG = 900L;
+    private Long SOS_SIGNAL_SHORT = 600L;
+    private Long SOS_SIGNAL_LONG = 1800L;
     private boolean IsOpen = false;
     private RelativeLayout mBgLight;
     private CameraManager mCameraManager;
@@ -101,7 +101,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private class FlightListener implements View.OnClickListener {
         public boolean open;
         private SosThread mSosThread = null;
@@ -163,9 +162,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class SosThread extends Thread {
-        private int i = 0;
-        private int j = 0;
-        private int k = 0;
+        private int i;
+        private int j;
+        private int k;
         private boolean stopFlag = false;
 
         SosThread() {
@@ -189,6 +188,9 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             while (!stopFlag) {
+                i = 0;
+                j = 0;
+                k = 0;
                 while (!stopFlag && i < SOS_SIGNAL) {
                     openTorch();
                     sleepThread(SOS_SIGNAL_SHORT);
