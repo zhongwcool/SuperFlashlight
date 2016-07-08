@@ -115,18 +115,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void open(View v) {
-            mBgLight.setBackgroundResource(R.drawable.shou_on);
             switch (v.getId()) {
                 case R.id.btn_torch:
                     if (mSosListener != null) {
                         mSosListener.close(v);
                     }
                     mTorchBtn.setBackgroundResource(R.drawable.turn_on);
+                    mBgLight.setBackgroundResource(R.drawable.shou_on);
                     openTorch();
                     break;
                 case R.id.btn_sos:
                     mTorchBtn.setBackgroundResource(R.drawable.turn_off);
                     mSosBtn.setBackgroundResource(R.drawable.sos_on);
+                    mBgLight.setBackgroundResource(R.drawable.shou_on);
                     mSosThread = new SosThread();
                     mSosThread.start();
                     break;
@@ -134,14 +135,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void close(View v) {
-            mBgLight.setBackgroundResource(R.drawable.shou_off);
             switch (v.getId()) {
                 case R.id.btn_torch:
                     mTorchBtn.setBackgroundResource(R.drawable.turn_off);
+                    mBgLight.setBackgroundResource(R.drawable.shou_off);
                     closeTorch();
                     break;
                 case R.id.btn_sos:
                     mSosBtn.setBackgroundResource(R.drawable.sos_off);
+                    mBgLight.setBackgroundResource(R.drawable.shou_off);
                     if (mSosThread != null) {
                         mSosThread.stopThread();
                         mSosThread = null;
@@ -233,14 +235,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fullScreen() {
-        mBgLight.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-        int newUiOptions = getWindow().getDecorView().getSystemUiVisibility();
-        newUiOptions &= View.SYSTEM_UI_FLAG_LOW_PROFILE;
-        newUiOptions ^= View.SYSTEM_UI_FLAG_FULLSCREEN;
-        newUiOptions ^= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
 
     @Override
