@@ -21,10 +21,10 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
     private int mBackKeyPressedTimes = 0;
-    private int SOS_SIGNAL = 3;
-    private Long SOS_SIGNAL_SHORT = 600L;
-    private Long SOS_SIGNAL_LONG = 1800L;
-    private boolean IsOpen = false;
+    private static int SOS_SIGNAL = 3;
+    private static Long SOS_SIGNAL_INTERVAL_SHORT = 600L;
+    private static Long SOS_SIGNAL_INTERVAL_LONG  = 1800L;
+    private boolean isFirstOpen = false;
     private RelativeLayout mBgLight;
     private CameraManager mCameraManager;
     private NotificationManager mNotificationManager;
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private FlightListener mTorchListener;
     private FlightListener mSosListener;
 
-
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -47,10 +47,10 @@ public class MainActivity extends AppCompatActivity {
         mTorchLayoutParams.setMargins((int) (0.42F * size.x), (int) (0.46F * size.y), 0, 0);
         mSosLayoutParams.setMargins((int) (0.42F * size.x), (int) (0.68F * size.y), 0, 0);
 
-        mBgLight = ((RelativeLayout) findViewById(R.id.torch));
-        mTorchBtn = ((Button) findViewById(R.id.btn_torch));
+        mBgLight = (RelativeLayout) findViewById(R.id.torch);
+        mTorchBtn = (Button) findViewById(R.id.btn_torch);
         mTorchBtn.setLayoutParams(mTorchLayoutParams);
-        mSosBtn = ((Button) findViewById(R.id.btn_sos));
+        mSosBtn = (Button) findViewById(R.id.btn_sos);
         mSosBtn.setLayoutParams(mSosLayoutParams);
         mTorchListener = new FlightListener(true, mTorchBtn);
         mSosListener = new FlightListener(false, mSosBtn);
@@ -59,11 +59,18 @@ public class MainActivity extends AppCompatActivity {
         showNotification();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        fullScreen();
+    }
+
+    @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (!IsOpen) {
+        if (!isFirstOpen) {
             new OpenLightTask().execute();
-            IsOpen = true;
+            isFirstOpen = true;
         }
     }
 
@@ -85,29 +92,32 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class OpenLightTask extends AsyncTask<Void, Void, Void> {
+    private class OpenLightTask extends AsyncTask<Object, Object, Object> {
         OpenLightTask() {
         }
 
-        protected Void doInBackground(Void[] voids) {
+        @Override
+        protected Object doInBackground(Object[] objects) {
             return null;
         }
 
-        protected void onPostExecute(Void v) {
+        @Override
+        protected void onPostExecute(Object o) {
+            super.onPostExecute(o);
             mTorchBtn.setBackgroundResource(R.drawable.turn_on);
             mBgLight.setBackgroundResource(R.drawable.shou_on);
             openTorch();
-            mTorchListener.open = true;
+            mTorchListener.isOpen = true;
         }
     }
 
     private class FlightListener implements View.OnClickListener {
-        public boolean open;
+        private boolean isOpen;
         private SosThread mSosThread = null;
 
-        FlightListener(boolean bool, View v) {
-            open = bool;
-            if (open) {
+        FlightListener(boolean open, View v) {
+            isOpen = open;
+            if (isOpen) {
                 open(v);
                 return;
             }
@@ -152,14 +162,15 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public void onClick(View v) {
-            if (open) {
-                close(v);
-                open = false;
+        @Override
+        public void onClick(View view) {
+            if (isOpen) {
+                close(view);
+                isOpen = false;
                 return;
             }
-            open = true;
-            open(v);
+            isOpen = true;
+            open(view);
         }
     }
 
@@ -167,55 +178,55 @@ public class MainActivity extends AppCompatActivity {
         private int i;
         private int j;
         private int k;
-        private boolean stopFlag = false;
+        private boolean isStop = false;
 
         SosThread() {
         }
 
         private void stopThread() {
-            stopFlag = true;
+            isStop = true;
         }
 
         private void sleepThread(long t) {
             try {
                 Thread.sleep(t);
-            } catch (Exception e) {
-                // TODO: handle exception
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
+        @Override
         public void run() {
-            if (stopFlag) {
+            if (isStop) {
                 return;
             }
-            while (!stopFlag) {
+            while (!isStop) {
                 i = 0;
                 j = 0;
                 k = 0;
-                while (!stopFlag && i < SOS_SIGNAL) {
+                while (!isStop && i < SOS_SIGNAL) {
                     openTorch();
-                    sleepThread(SOS_SIGNAL_SHORT);
+                    sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
                     closeTorch();
-                    sleepThread(SOS_SIGNAL_SHORT);
+                    sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
                     i++;
                 }
-                sleepThread(SOS_SIGNAL_LONG);
-                while (j < SOS_SIGNAL && !stopFlag) {
+                sleepThread(SOS_SIGNAL_INTERVAL_LONG);
+                while (j < SOS_SIGNAL && !isStop) {
                     openTorch();
-                    sleepThread(SOS_SIGNAL_LONG);
+                    sleepThread(SOS_SIGNAL_INTERVAL_LONG);
                     closeTorch();
-                    sleepThread(SOS_SIGNAL_LONG);
+                    sleepThread(SOS_SIGNAL_INTERVAL_LONG);
                     j++;
                 }
-                while (!stopFlag && k < SOS_SIGNAL) {
+                while (!isStop && k < SOS_SIGNAL) {
                     openTorch();
-                    sleepThread(SOS_SIGNAL_SHORT);
+                    sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
                     closeTorch();
-                    sleepThread(SOS_SIGNAL_SHORT);
+                    sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
                     k++;
                 }
-                sleepThread(SOS_SIGNAL_SHORT);
+                sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
             }
         }
     }
@@ -243,11 +254,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        fullScreen();
-    }
-
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
             if (mBackKeyPressedTimes == 0) {
