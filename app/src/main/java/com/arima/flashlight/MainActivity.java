@@ -44,8 +44,8 @@ public class MainActivity extends AppCompatActivity {
         display.getSize(size);
         RelativeLayout.LayoutParams mTorchLayoutParams = new RelativeLayout.LayoutParams(-2, -2);
         RelativeLayout.LayoutParams mSosLayoutParams = new RelativeLayout.LayoutParams(-2, -2);
-        mTorchLayoutParams.setMargins((int) (0.42F * size.x), (int) (0.46F * size.y), 0, 0);
-        mSosLayoutParams.setMargins((int) (0.42F * size.x), (int) (0.68F * size.y), 0, 0);
+        mTorchLayoutParams.setMargins((int) (0.435F * size.x), (int) (0.46F * size.y), 0, 0);
+        mSosLayoutParams.setMargins((int) (0.435F * size.x), (int) (0.68F * size.y), 0, 0);
 
         mBgLight = (RelativeLayout) findViewById(R.id.torch);
         mTorchBtn = (Button) findViewById(R.id.btn_torch);
