@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private int mBackKeyPressedTimes = 0;
     private static int SOS_SIGNAL = 3;
     private static Long SOS_SIGNAL_INTERVAL_SHORT = 600L;
-    private static Long SOS_SIGNAL_INTERVAL_LONG  = 1800L;
+    private static Long SOS_SIGNAL_INTERVAL_LONG = 1800L;
     private boolean isFirstOpen = false;
     private RelativeLayout mBgLight;
     private CameraManager mCameraManager;
@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private FlightListener mTorchListener;
     private FlightListener mSosListener;
     private CameraManager.TorchCallback mTorchCallback;
+    private SosThread mSosThread = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,8 +54,8 @@ public class MainActivity extends AppCompatActivity {
         mTorchBtn.setLayoutParams(mTorchLayoutParams);
         mSosBtn = (Button) findViewById(R.id.btn_sos);
         mSosBtn.setLayoutParams(mSosLayoutParams);
-        mTorchListener = new FlightListener(true, mTorchBtn);
-        mSosListener = new FlightListener(false, mSosBtn);
+        mTorchListener = new FlightListener();
+        mSosListener = new FlightListener();
         mTorchBtn.setOnClickListener(mTorchListener);
         mSosBtn.setOnClickListener(mSosListener);
 
@@ -88,12 +89,25 @@ public class MainActivity extends AppCompatActivity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (!isFirstOpen) {
-            new OpenLightTask().execute();
+            AsyncTask mAsyncTask = new AsyncTask() {
+                @Override
+                protected Object doInBackground(Object[] objects) {
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Object o) {
+                    super.onPostExecute(o);
+                    openTorch();
+                    mTorchListener.isOpen = true;
+                }
+            };
+            mAsyncTask.execute();
             isFirstOpen = true;
         }
     }
 
-    private void openTorch() {
+    private void openLight() {
         try {
             String[] list = mCameraManager.getCameraIdList();
             mCameraManager.setTorchMode(list[0], true);
@@ -102,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void closeTorch() {
+    private void closeLight() {
         try {
             String[] list = mCameraManager.getCameraIdList();
             mCameraManager.setTorchMode(list[0], false);
@@ -111,88 +125,63 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class OpenLightTask extends AsyncTask<Object, Object, Object> {
-        OpenLightTask() {
+    private void openTorch() {
+        if (mSosListener != null) {
+            mSosListener.isOpen = false;
+            closeSos();
         }
+        mTorchBtn.setBackgroundResource(R.drawable.turn_on);
+        mBgLight.setBackgroundResource(R.drawable.shou_on);
+        openLight();
+    }
 
-        @Override
-        protected Object doInBackground(Object[] objects) {
-            return null;
-        }
+    private void closeTorch() {
+        mTorchBtn.setBackgroundResource(R.drawable.turn_off);
+        mBgLight.setBackgroundResource(R.drawable.shou_off);
+        closeLight();
+    }
 
-        @Override
-        protected void onPostExecute(Object o) {
-            super.onPostExecute(o);
-            mTorchBtn.setBackgroundResource(R.drawable.turn_on);
-            mBgLight.setBackgroundResource(R.drawable.shou_on);
-            openTorch();
-            mTorchListener.isOpen = true;
+    private void openSos() {
+        mTorchListener.isOpen = false;
+        mTorchBtn.setBackgroundResource(R.drawable.turn_off);
+        mSosBtn.setBackgroundResource(R.drawable.sos_on);
+        mBgLight.setBackgroundResource(R.drawable.shou_on);
+        mSosThread = new SosThread();
+        mSosThread.start();
+    }
+
+    private void closeSos() {
+        if (mSosThread != null) {
+            mSosThread.stopThread();
+            mSosThread = null;
         }
+        mSosBtn.setBackgroundResource(R.drawable.sos_off);
+        mBgLight.setBackgroundResource(R.drawable.shou_off);
     }
 
     private class FlightListener implements View.OnClickListener {
         private boolean isOpen;
-        private SosThread mSosThread = null;
 
-        FlightListener(boolean open, View v) {
-            isOpen = open;
-            if (isOpen) {
-                open(v);
-                return;
-            }
-            close(v);
-        }
-
-        private void open(View v) {
-            switch (v.getId()) {
-                case R.id.btn_torch:
-                    if (mSosListener != null) {
-                        mSosListener.close(mSosBtn);
-                        mSosListener.isOpen = false;
-                    }
-                    mSosBtn.setBackgroundResource(R.drawable.sos_off);
-                    mTorchBtn.setBackgroundResource(R.drawable.turn_on);
-                    mBgLight.setBackgroundResource(R.drawable.shou_on);
-                    openTorch();
-                    break;
-                case R.id.btn_sos:
-                    mTorchListener.isOpen = false;
-                    mTorchBtn.setBackgroundResource(R.drawable.turn_off);
-                    mSosBtn.setBackgroundResource(R.drawable.sos_on);
-                    mBgLight.setBackgroundResource(R.drawable.shou_on);
-                    mSosThread = new SosThread();
-                    mSosThread.start();
-                    break;
-            }
-        }
-
-        private void close(View v) {
-            switch (v.getId()) {
-                case R.id.btn_torch:
-                    mTorchBtn.setBackgroundResource(R.drawable.turn_off);
-                    mBgLight.setBackgroundResource(R.drawable.shou_off);
-                    closeTorch();
-                    break;
-                case R.id.btn_sos:
-                    mSosBtn.setBackgroundResource(R.drawable.sos_off);
-                    mBgLight.setBackgroundResource(R.drawable.shou_off);
-                    if (mSosThread != null) {
-                        mSosThread.stopThread();
-                        mSosThread = null;
-                    }
-                    break;
-            }
+        FlightListener() {
         }
 
         @Override
         public void onClick(View view) {
             if (isOpen) {
-                close(view);
+                if (view.getId() == R.id.btn_torch) {
+                    closeTorch();
+                } else {
+                    closeSos();
+                }
                 isOpen = false;
                 return;
             }
             isOpen = true;
-            open(view);
+            if (view.getId() == R.id.btn_torch) {
+                openTorch();
+            } else {
+                openSos();
+            }
         }
     }
 
@@ -217,6 +206,19 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        private void sendSignal(int signal, long interval) {
+            while (!isStop && signal < SOS_SIGNAL) {
+                openLight();
+                sleepThread(interval);
+                if (isStop && mTorchListener.isOpen) {
+                    return;
+                }
+                closeLight();
+                sleepThread(interval);
+                signal++;
+            }
+        }
+
         @Override
         public void run() {
             if (isStop) {
@@ -226,37 +228,10 @@ public class MainActivity extends AppCompatActivity {
                 i = 0;
                 j = 0;
                 k = 0;
-                while (!isStop && i < SOS_SIGNAL) {
-                    openTorch();
-                    sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
-                    if (isStop && mTorchListener.isOpen) {
-                        break;
-                    }
-                    closeTorch();
-                    sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
-                    i++;
-                }
+                sendSignal(i, SOS_SIGNAL_INTERVAL_SHORT);
                 sleepThread(SOS_SIGNAL_INTERVAL_LONG);
-                while (j < SOS_SIGNAL && !isStop) {
-                    openTorch();
-                    sleepThread(SOS_SIGNAL_INTERVAL_LONG);
-                    if (isStop && mTorchListener.isOpen) {
-                        break;
-                    }
-                    closeTorch();
-                    sleepThread(SOS_SIGNAL_INTERVAL_LONG);
-                    j++;
-                }
-                while (!isStop && k < SOS_SIGNAL) {
-                    openTorch();
-                    sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
-                    if (isStop && mTorchListener.isOpen) {
-                        break;
-                    }
-                    closeTorch();
-                    sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
-                    k++;
-                }
+                sendSignal(j, SOS_SIGNAL_INTERVAL_LONG);
+                sendSignal(k, SOS_SIGNAL_INTERVAL_SHORT);
                 sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
             }
         }
@@ -306,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
                 mBackKeyPressedTimes = 0;
                 mNotificationManager.cancel(0);
                 mCameraManager.unregisterTorchCallback(mTorchCallback);
-                closeTorch();
+                closeLight();
                 finish();
                 Process.killProcess(Process.myPid());
             }
