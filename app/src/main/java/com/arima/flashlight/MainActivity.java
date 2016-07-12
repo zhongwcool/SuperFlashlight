@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private Button mSosBtn;
     private FlightListener mTorchListener;
     private FlightListener mSosListener;
+    private CameraManager.TorchCallback mTorchCallback;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -56,7 +57,25 @@ public class MainActivity extends AppCompatActivity {
         mSosListener = new FlightListener(false, mSosBtn);
         mTorchBtn.setOnClickListener(mTorchListener);
         mSosBtn.setOnClickListener(mSosListener);
+
+        mTorchCallback = new CameraManager.TorchCallback() {
+            @Override
+            public void onTorchModeChanged(String cameraId, boolean enabled) {
+                super.onTorchModeChanged(cameraId, enabled);
+                if (enabled) {
+                    mBgLight.setBackgroundResource(R.drawable.shou_on);
+                    if (!mSosListener.isOpen) {
+                        mTorchBtn.setBackgroundResource(R.drawable.turn_on);
+                    }
+                } else {
+                    mBgLight.setBackgroundResource(R.drawable.shou_off);
+                    mTorchBtn.setBackgroundResource(R.drawable.turn_off);
+                }
+            }
+        };
+        mCameraManager.registerTorchCallback(mTorchCallback, null);
         showNotification();
+
     }
 
     @Override
@@ -128,13 +147,16 @@ public class MainActivity extends AppCompatActivity {
             switch (v.getId()) {
                 case R.id.btn_torch:
                     if (mSosListener != null) {
-                        mSosListener.close(v);
+                        mSosListener.close(mSosBtn);
+                        mSosListener.isOpen = false;
                     }
+                    mSosBtn.setBackgroundResource(R.drawable.sos_off);
                     mTorchBtn.setBackgroundResource(R.drawable.turn_on);
                     mBgLight.setBackgroundResource(R.drawable.shou_on);
                     openTorch();
                     break;
                 case R.id.btn_sos:
+                    mTorchListener.isOpen = false;
                     mTorchBtn.setBackgroundResource(R.drawable.turn_off);
                     mSosBtn.setBackgroundResource(R.drawable.sos_on);
                     mBgLight.setBackgroundResource(R.drawable.shou_on);
@@ -207,6 +229,9 @@ public class MainActivity extends AppCompatActivity {
                 while (!isStop && i < SOS_SIGNAL) {
                     openTorch();
                     sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
+                    if (isStop && mTorchListener.isOpen) {
+                        break;
+                    }
                     closeTorch();
                     sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
                     i++;
@@ -215,6 +240,9 @@ public class MainActivity extends AppCompatActivity {
                 while (j < SOS_SIGNAL && !isStop) {
                     openTorch();
                     sleepThread(SOS_SIGNAL_INTERVAL_LONG);
+                    if (isStop && mTorchListener.isOpen) {
+                        break;
+                    }
                     closeTorch();
                     sleepThread(SOS_SIGNAL_INTERVAL_LONG);
                     j++;
@@ -222,6 +250,9 @@ public class MainActivity extends AppCompatActivity {
                 while (!isStop && k < SOS_SIGNAL) {
                     openTorch();
                     sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
+                    if (isStop && mTorchListener.isOpen) {
+                        break;
+                    }
                     closeTorch();
                     sleepThread(SOS_SIGNAL_INTERVAL_SHORT);
                     k++;
@@ -274,6 +305,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 mBackKeyPressedTimes = 0;
                 mNotificationManager.cancel(0);
+                mCameraManager.unregisterTorchCallback(mTorchCallback);
                 closeTorch();
                 finish();
                 Process.killProcess(Process.myPid());
