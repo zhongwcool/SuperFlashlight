@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
-            android:background="@drawable/sos_on"
+            android:background="@drawable/sos_off"
             android:minHeight="0dp"
             android:minWidth="0dp" />
 
