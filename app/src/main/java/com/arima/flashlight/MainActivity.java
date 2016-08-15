@@ -3,14 +3,22 @@ package com.arima.flashlight;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Point;
+import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.Process;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.View;
@@ -34,13 +42,12 @@ public class MainActivity extends AppCompatActivity {
     private FlightListener mSosListener;
     private CameraManager.TorchCallback mTorchCallback;
     private SosThread mSosThread = null;
+    private AlertDialog.Builder mBuilder;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        mCameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
@@ -54,6 +61,15 @@ public class MainActivity extends AppCompatActivity {
         mTorchBtn.setLayoutParams(mTorchLayoutParams);
         mSosBtn = (Button) findViewById(R.id.btn_sos);
         mSosBtn.setLayoutParams(mSosLayoutParams);
+        if (!hasBackFacingCamera()) {
+            myAlertDialog(R.string.camera_no_support);
+            return;
+        }
+        if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
+            myAlertDialog(R.string.flash_no_support);
+            return;
+        }
+        mCameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
         mTorchListener = new FlightListener();
         mSosListener = new FlightListener();
         mTorchBtn.setOnClickListener(mTorchListener);
@@ -67,16 +83,57 @@ public class MainActivity extends AppCompatActivity {
                     mBgLight.setBackgroundResource(R.drawable.shou_on);
                     if (!mSosListener.isOpen) {
                         mTorchBtn.setBackgroundResource(R.drawable.turn_on);
+                        mTorchListener.isOpen = enabled;
                     }
                 } else {
                     mBgLight.setBackgroundResource(R.drawable.shou_off);
                     mTorchBtn.setBackgroundResource(R.drawable.turn_off);
+                    mTorchListener.isOpen = enabled;
                 }
             }
         };
         mCameraManager.registerTorchCallback(mTorchCallback, null);
         showNotification();
+    }
 
+    private void myAlertDialog(int messageId) {
+        mBuilder = new AlertDialog.Builder(this)
+                .setTitle(R.string.warning)
+                .setMessage(messageId)
+                .setPositiveButton(R.string.ok,new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // TODO Auto-generated method stub
+                        finish();
+                        Process.killProcess(Process.myPid());
+                    }
+                });
+        mBuilder.setCancelable(false);
+        mBuilder.show();
+    }
+
+    private static boolean checkCameraFacing(final int facing) {
+        if (getSdkVersion() < Build.VERSION_CODES.GINGERBREAD) {
+            return false;
+        }
+        final int cameraCount = Camera.getNumberOfCameras();
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        for (int i = 0; i < cameraCount; i++) {
+            Camera.getCameraInfo(i, info);
+            if (facing == info.facing) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean hasBackFacingCamera() {
+        final int CAMERA_FACING_BACK = 0;
+        return checkCameraFacing(CAMERA_FACING_BACK);
+    }
+
+    public static int getSdkVersion() {
+        return android.os.Build.VERSION.SDK_INT;
     }
 
     @Override
@@ -211,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
                 openLight();
                 sleepThread(interval);
                 if (isStop && mTorchListener.isOpen) {
-                    return;
+                    break;
                 }
                 closeLight();
                 sleepThread(interval);
@@ -257,6 +314,12 @@ public class MainActivity extends AppCompatActivity {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mNotificationManager.cancel(0);
     }
 
     @Override
